@@ -165,17 +165,20 @@ OnExitMenu:
   ExitApp
   return
 
+SwitchImage(file, mw, mh) {
+  size := DecideImageSize(file, mw, mh)
+
+  GuiControl, Move, MyPicture, %size%
+  GuiControl,, MyPicture, %file%
+  Gui, Show, xCenter yCenter AutoSize, lview - %file%
+}
+
 #IfWinActive, lview -
 Left::
   If file_index < max_file_index
   {
     file_index++
-    file := files[file_index]
-    size := DecideImageSize(file, mw, mh)
-
-    GuiControl, Move, MyPicture, %size%
-    GuiControl,, MyPicture, %file%
-    Gui, Show, xCenter yCenter AutoSize, lview - %file%
+    SwitchImage(files[file_index], mw, mh)
   }
   return
 
@@ -183,12 +186,7 @@ Right::
   If file_index > 1
   {
     file_index--
-    file := files[file_index]
-    size := DecideImageSize(file, mw, mh)
-
-    GuiControl, Move, MyPicture, %size%
-    GuiControl,, MyPicture, %file%
-    Gui, Show, xCenter yCenter AutoSize, lview - %file%
+    SwitchImage(files[file_index], mw, mh)
   }
   return
 #IfWinActive

@@ -3,6 +3,7 @@
 version := "0.01a"
 
 DecideImageSize(ImageFullPath, mw, mh) {
+  ; Modified from:
   ; http://www.autohotkey.com/board/topic/55305-read-the-image-size-solved/
   GDIPToken := Gdip_Startup()
 	pBM := Gdip_CreateBitmapFromFile(ImageFullPath)
@@ -21,6 +22,40 @@ DecideImageSize(ImageFullPath, mw, mh) {
     h := Floor(h * scale)
   }
   return "w" w " h" h
+}
+
+; Modified from:
+; https://sites.google.com/site/ahkref/custom-functions/sortarray
+SortArray(Array, KeyArray, Order="A") {
+    ;Order A: Ascending, D: Descending, R: Reverse
+    MaxIndex := ObjMaxIndex(Array)
+    If (Order = "R") {
+        count := 0
+        Loop, % MaxIndex
+            ObjInsert(Array, ObjRemove(Array, MaxIndex - count++))
+        Return
+    }
+    Partitions := "|" ObjMinIndex(Array) "," MaxIndex
+    Loop {
+        comma := InStr(this_partition := SubStr(Partitions, InStr(Partitions, "|", False, 0)+1), ",")
+        spos := pivot := SubStr(this_partition, 1, comma-1) , epos := SubStr(this_partition, comma+1)
+        if (Order = "A") {
+            Loop, % epos - spos {
+                if (KeyArray[pivot] > KeyArray[A_Index+spos])
+                    ObjInsert(Array, pivot++, ObjRemove(Array, A_Index+spos))
+            }
+        } else {
+            Loop, % epos - spos {
+                if (KeyArray[pivot] < KeyArray[A_Index+spos])
+                    ObjInsert(Array, pivot++, ObjRemove(Array, A_Index+spos))
+            }
+        }
+        Partitions := SubStr(Partitions, 1, InStr(Partitions, "|", False, 0)-1)
+        if (pivot - spos) > 1    ;if more than one elements
+            Partitions .= "|" spos "," pivot-1        ;the left partition
+        if (epos - pivot) > 1    ;if more than one elements
+            Partitions .= "|" pivot+1 "," epos        ;the right partition
+    } Until !Partitions
 }
 
 #Persistent
@@ -89,28 +124,32 @@ ButtonCancel:
 
 OnPreview:
   dir = %A_Temp%\lview
+  files := Object()
+  filetimes := Object()
   Loop, %dir%\*
   {
+    files.Insert(A_LoopFileFullPath)
     FileGetTime, t, %A_LoopFileFullPath%, C
-    If (t > t_latest)
-    {
-      t_latest := t
-      filename := A_LoopFileName
-    }
+    filetimes.Insert(t)
   }
 
-  If filename =
+  ; Sort by time
+  SortArray(files, filetimes, "D")
+  file_index = 1
+  max_file_index = files.MaxIndex()
+  file := files[file_index]
+
+  If file =
   {
     TrayTip, lview, No displayable image found at this time.
     return
   }
-  path = %dir%\%filename%
-  size := DecideImageSize(path, mw, mh)
+  size := DecideImageSize(file, mw, mh)
 
   Gui, Margin, 0, 0
   Gui, -MaximizeBox
-  Gui, Add, Picture, %size%, %path%
-  Gui, Show, xCenter yCenter AutoSize, lview - %filename%
+  Gui, Add, Picture, %size% vMyPicture, %file%
+  Gui, Show, xCenter yCenter AutoSize, lview - %file%
   return
 
 GuiClose:
@@ -125,3 +164,34 @@ OnAbout:
 OnExitMenu:
   ExitApp
   return
+
+#IfWinActive, lview -
+Left::
+  If file_index < max_file_index
+  {
+    file_index++
+    file := files[file_index]
+    size := DecideImageSize(file, mw, mh)
+
+    GuiControl, Move, MyPicture, %size%
+    GuiControl,, MyPicture, %file%
+    Gui, Show, xCenter yCenter AutoSize, lview - %file%
+  }
+  return
+
+Right::
+  If file_index > 1
+  {
+    file_index--
+    file := files[file_index]
+    size := DecideImageSize(file, mw, mh)
+
+    GuiControl, Move, MyPicture, %size%
+    GuiControl,, MyPicture, %file%
+    Gui, Show, xCenter yCenter AutoSize, lview - %file%
+  }
+  return
+#IfWinActive
+
+; Debug purpose
+; ^!a::Reload

@@ -41,13 +41,17 @@ SortArray(Array, KeyArray, Order="A") {
         spos := pivot := SubStr(this_partition, 1, comma-1) , epos := SubStr(this_partition, comma+1)
         if (Order = "A") {
             Loop, % epos - spos {
-                if (KeyArray[pivot] > KeyArray[A_Index+spos])
-                    ObjInsert(Array, pivot++, ObjRemove(Array, A_Index+spos))
+                if (KeyArray[pivot] > KeyArray[A_Index+spos]) {
+                  ObjInsert(KeyArray, pivot, ObjRemove(KeyArray, A_Index+spos))
+                  ObjInsert(Array, pivot++, ObjRemove(Array, A_Index+spos))
+                }
             }
         } else {
             Loop, % epos - spos {
-                if (KeyArray[pivot] < KeyArray[A_Index+spos])
-                    ObjInsert(Array, pivot++, ObjRemove(Array, A_Index+spos))
+                if (KeyArray[pivot] < KeyArray[A_Index+spos]) {
+                  ObjInsert(KeyArray, pivot, ObjRemove(KeyArray, A_Index+spos))
+                  ObjInsert(Array, pivot++, ObjRemove(Array, A_Index+spos))
+                }
             }
         }
         Partitions := SubStr(Partitions, 1, InStr(Partitions, "|", False, 0)-1)
@@ -129,10 +133,10 @@ OnPreview:
   Loop, %dir%\*
   {
     files.Insert(A_LoopFileFullPath)
-    FileGetTime, t, %A_LoopFileFullPath%, C
+    FileGetTime, t, %A_LoopFileFullPath%, M
     filetimes.Insert(t)
   }
-
+  
   ; Sort by time
   SortArray(files, filetimes, "D")
   file_index = 1

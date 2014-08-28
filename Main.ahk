@@ -80,6 +80,7 @@ If mh =
 {
   mh := Floor(A_ScreenHeight * 0.4)
 }
+IniRead, viewer_path, lview.ini, lview, viewer, %A_Space%
 
 Menu, TRAY, NoStandard
 Menu, TRAY, Add, "Config (&C)", OnConfig
@@ -101,9 +102,20 @@ OnConfig:
   Gui, Add, Edit, vmw w60, %mw%
   Gui, Add, Text,, Height:
   Gui, Add, Edit, vmh w60, %mh%
+  Gui, Add, Text,, Viewer (blank for internal viewer)
+  Gui, Add, Edit, vviewer_path w160, %viewer_path%
+  Gui, Add, Button, gButtonSelectViewer w45, Select...
   Gui, Add, Button, gButtonOK w65, OK
   Gui, Add, Button, gButtonCancel w65 x85 yp-0, Cancel
   Gui, Show
+  return
+
+ButtonSelectViewer:
+  FileSelectFile, viewer_path_selected, 3,,, Executable (*.exe)
+  if viewer_path_selected !=
+  {
+    GuiControl,, viewer_path, %viewer_path_selected%
+  }
   return
 
 ButtonOK:
@@ -113,6 +125,7 @@ ButtonOK:
   IniWrite, %activator%, lview.ini, lview, activator
   IniWrite, %mw%, lview.ini, lview, width
   IniWrite, %mh%, lview.ini, lview, height
+  IniWrite, %viewer_path%, lview.ini, lview, viewer
   Hotkey, %activator%, OnPreview, On
   return
 
@@ -136,7 +149,7 @@ OnPreview:
     FileGetTime, t, %A_LoopFileFullPath%, M
     filetimes.Insert(t)
   }
-  
+
   ; Sort by time
   SortArray(files, filetimes, "D")
   file_index = 1
@@ -148,6 +161,14 @@ OnPreview:
     TrayTip, lview, No displayable image found at this time.
     return
   }
+
+  If viewer_path !=
+  {
+    ; Open with external viewer
+    Run, %viewer_path% %file%
+    return
+  }
+
   size := DecideImageSize(file, mw, mh)
 
   Gui, Margin, 0, 0
@@ -196,4 +217,5 @@ Right::
 #IfWinActive
 
 ; Debug purpose
+; ^!q::Gosub, OnConfig
 ; ^!a::Reload

@@ -1,6 +1,9 @@
-Gdip.ahk
-lview.ini
+build
+dist
 
+Gdip.ahk
+
+lview.ini
 .exe
 .zip
 
@@ -27,4 +30,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
